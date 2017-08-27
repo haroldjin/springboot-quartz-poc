@@ -1,0 +1,174 @@
+<!DOCTYPE HTML>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+<title>TaskList</title>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+<script type="text/javascript"
+	src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+<link rel="stylesheet" type="text/css" href="/public/css/taskList.css"/>
+<meta name="_csrf" th:content="${_csrf.token}"/>
+<meta name="_csrf_header" th:content="${_csrf.headerName}"/>
+</head>
+<body class="bgray">
+	<form id="addForm" method="post">
+		<table class="list_table">
+			<thead>
+				<tr>
+					<td style="width: 20xp">id&nbsp;&nbsp;&nbsp;</td>
+					<td>Name</td>
+					<td>Group</td>
+					<td>Status</td>
+					<td>Cron Expression</td>
+					<td>Description</td>
+					<td>isConcurrent</td>
+					<td>Bean Class</td>
+					<td>Spring Id</td>
+					<td>Method Name</td>
+					<td>Update</td>
+				</tr>
+			</thead>
+			<!-- <div th:if="${taskList.taskList} != null}"> -->
+			<tbody>
+				<tr th:each="job : ${taskList}">
+					<td th:text="${job.jobId }"></td>
+					<td th:text="${job.jobName }"></td>
+					<td th:text="${job.jobGroup }"></td>
+					<td >
+						<a href="javascript:;"
+							th:onclick="${job.jobStatus=='1' ? 'changeJobStatus(''' + job.jobId + ''',''stop'')':
+								'changeJobStatus(''' + job.jobId +''',''start'')'}" 
+								th:text="${job.jobStatus=='1'? 'Stop' : 'Start'}">
+							</a>
+					</td>
+					<td th:text="${job.cronExpression }"></td>
+					<td th:text="${job.description }"></td>
+					<td th:text="${job.isConcurrent}"></td>
+					<td th:text="${job.beanClass }"></td>
+					<td th:text="${job.springId }"></td>
+					<td th:text="${job.methodName }"></td>
+
+					<td><a href="javascript:;"
+						th:onclick="${'updateCron(''' + job.jobId + ''')'}">Update Cron</a></td>
+				</tr>
+
+				<tr>
+					<td>n</td>
+					<td><input type="text" name="jobName" id="jobName"></input></td>
+					<td><input type="text" name="jobGroup" id="jobGroup"></input></td>
+					<td>0<input type="hidden" name="jobStatus" value="0"></input></td>
+					<td><input type="text" name="cronExpression"
+						id="cronExpression"></input></td>
+					<td><input type="text" name="description" id="description"></input></td>
+					<td><select name="isConcurrent" id="isConcurrent">
+							<option value="1">1</option>
+							<option value="0">0</option>
+					</select></td>
+					<td><input type="text" name="beanClass" id="beanClass"></input></td>
+					<td><input type="text" name="springId" id="springId"></input></td>
+					<td><input type="text" name="methodName" id="methodName"></input></td>
+					<td><input type="button" onclick="add()" value="Save" /></td>
+				</tr>
+			</tbody>
+		</table>
+	</form>
+	<script type="text/javascript" src="/public/script/taskList.js"></script>
+	<script th:inline="javascript">
+
+	/*<![CDATA[*/
+		var token = $("meta[name='_csrf']").attr("content");
+	    var header = $("meta[name='_csrf_header']").attr("content");
+	    $(document).ajaxSend(function(e, xhr, options) {
+	        xhr.setRequestHeader(header, token);
+	    });
+		function add() {
+			if (validateAdd()) {
+				showWaitMsg();
+				$.ajax({
+					type : "POST",
+					async : false,
+					dataType : "JSON",
+					cache : false,
+					url : [[${path}+'/add']],
+					data : $("#addForm").serialize(),
+					success : function(data) {
+						hideWaitMsg();
+						if (data.flag) {
+							location.reload();
+						} else {
+							alert(data.msg);
+						}
+					}//end-callback
+				});//end-ajax
+			}
+		}
+		function changeJobStatus(jobId, cmd) {
+			showWaitMsg();
+			$.ajax({
+				type : "POST",
+				async : false,
+				dataType : "JSON",
+				cache : false,
+				url : [[${path}+'/changeJobStatus']],
+				data : {
+					jobId : jobId,
+					cmd : cmd
+				},
+				success : function(data) {
+					hideWaitMsg();
+					if (data.flag) {
+
+						location.reload();
+					} else {
+						alert(data.msg);
+					}
+
+				}//end-callback
+			});//end-ajax
+		}
+		function updateCron(jobId) {
+			var cron = prompt("Please Enter a cron expression！", "")
+			if (cron) {
+				showWaitMsg();
+				$.ajax({
+					type : "POST",
+					async : false,
+					dataType : "JSON",
+					cache : false,
+					url : [[${path}+'/updateCron']],
+
+					data : {
+						jobId : jobId,
+						cron : cron
+					},
+					success : function(data) {
+						hideWaitMsg();
+						if (data.flag) {
+
+							location.reload();
+						} else {
+							alert(data.msg);
+						}
+					}//end-callback
+				});//end-ajax
+			}
+		}
+		function showWaitMsg(msg) {
+			if (msg) {
+			} else {
+				msg = 'Processing, please wait...';
+			}
+			var panelContainer = $("body");
+			$("<div id='msg-background' class='datagrid-mask' style='display:block;z-index:10006;'></div>").appendTo(panelContainer);
+			var msgDiv = $("<div id='msg-board' class='datagrid-mask-msg' style='display:block;z-index:10007;left:50%;'></div>").html(msg).appendTo(
+					panelContainer);
+			msgDiv.css("marginLeft", -msgDiv.outerWidth() / 2);
+		}
+		function hideWaitMsg() {
+			$('.datagrid-mask').remove();
+			$('.datagrid-mask-msg').remove();
+		}
+		/*]]>*/
+	</script>
+    
+</body>
+</html>
